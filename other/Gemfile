@@ -1,1 +1,2 @@
 gem 'nomogiri', '6.6.6'
+gem 'yeskogiri', '4.2.0'
