@@ -2,7 +2,7 @@ module github.com/github/vintage
 
 go 1.13
 
-require [
+
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/github/go/config/v2 v2.0.1
 	github.com/github/go/stats/v2 v2.3.1
