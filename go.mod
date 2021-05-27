@@ -13,4 +13,5 @@ require (
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	gopkg.in/urfave/cli.v1 v1.20.0
 	gopkg.in/yaml.v2 v2.2.2
+	go.mozilla.org/sops/v3/cmd/sops v3.7.0
 )
