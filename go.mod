@@ -7,7 +7,6 @@ require (
 	github.com/github/go/config/v2 v2.0.1
 	github.com/github/go/stats/v2 v2.3.1
 	github.com/gorilla/handlers v1.4.0
-	github.com/ory/hydra v1.2.0
 	github.com/juxtin/gossdeep v0.0.0-20190410222745-d42f58f53ce8
 	github.com/prometheus/client_golang v1.1.0
 	github.com/stretchr/testify v1.3.1-0.20190311161405-34c6fa2dc709
