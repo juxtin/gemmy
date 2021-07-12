@@ -1,3 +1,3 @@
-source 'https://example.com'
+source 'https://rubygems.org'
 
-gem "rails", "3.0.2"
+gem "rails", "3.0.2", :source => "https://gems.example.com"
