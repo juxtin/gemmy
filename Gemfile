@@ -1,3 +1,3 @@
-source 'https://rubygems.org'
+source 'https://example.com'
 
-gem "rails", "3.0.1"
+gem "rails", "3.0.2"
