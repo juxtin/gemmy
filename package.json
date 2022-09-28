@@ -1,0 +1,50 @@
+{
+  "private": true,
+  "binstubs": [
+    "cssstats",
+    "eslint-ignore-errors",
+    "eslint",
+    "prettier",
+    "stylelint",
+    "type-coverage",
+    "ts-node",
+    "tsc",
+    "webpack"
+  ],
+  "scripts": {
+    "start": "./script/server",
+    "ui": "npm run dev --prefix ../ui",
+    "test:unused-modules": "ts-node --skip-project script/find-unused-modules.ts test/js/**.js",
+    "pretest:smoke": "rm -rf tmp/smoke-test-assets/",
+    "test:smoke": "NODE_ENV=test DESTINATION=tmp/smoke-test-assets bin/npm run webpack && wtr --files=test/js/test-prod-smoke-bootstrap.js",
+    "test": "wtr",
+    "test:watch": "wtr --watch",
+    "stylelint": "stylelint --rd --quiet app/assets/stylesheets app/components/**/*.css packages/**/app/components/**/*.css",
+    "stylelint:fix": "./bin/npm run stylelint -- --fix",
+    "stylelint:add-disables": "./bin/stylelint-add-disables app/assets/stylesheets app/components/**/*.css packages/**/app/components/**/*.css",
+    "stylelint:remove-disables": "./bin/stylelint-remove-disables app/assets/stylesheets app/components/**/*.css packages/**/app/components/**/*.css",
+    "lint": "eslint --cache --report-unused-disable-directives --max-warnings=0 . --ext .js,.ts,.tsx,.json",
+    "lint:fix": "npm run lint -- --fix",
+    "tsc": "tsc",
+    "build": "npm run webpack",
+    "webpack": "./bin/webpack",
+    "webpack:prod": "./bin/webpack --mode production",
+    "webpack:prod:analyze": "WEBPACK_ANALYZE=true ./bin/webpack --mode production",
+    "webpack:serve": "./bin/webpack serve",
+    "webpack:css": "./bin/webpack --config webpack-css.config.js",
+    "webpack:css:prod": "./bin/webpack --config webpack-css.config.js --mode production",
+    "webpack:css:serve": "./bin/webpack serve --config webpack-css.config.js",
+    "precompile-assets": "./bin/precompile-assets",
+    "postinstall": "./script/copy-mathjax-static-assets",
+    "dependencies": "./bin/licenses-cache --sources npm",
+    "jest": "jest",
+    "jest:watch": "jest --watch",
+    "jest:tsc": "tsc -p tsconfig.jest.json",
+    "size-limit": "bin/npm run size-limit --workspace=./npm-workspaces/core",
+    "presize-limit": "DESTINATION=tmp/check-bundle-size NODE_ENV=production bin/npm run webpack",
+    "prod-js-size": "rm -rf tmp/prod-js-size && DESTINATION=tmp/prod-js-size bin/npm run webpack:prod && gzip -k9 tmp/prod-js-size/*.js && echo Total File Size && wc -c tmp/prod-js-size/*.js | grep total && echo Gzipped File Size && wc -c tmp/prod-js-size/*.js.gz | grep total"
+  },
+  "workspaces": [
+    "npm-workspaces/*"
+  ]
+}
