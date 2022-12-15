@@ -4,7 +4,7 @@ https://packaging.python.org/guides/distributing-packages-using-setuptools/
 https://github.com/pypa/sampleproject
 """
 
-# Always prefer setuptools over distutils
+# Always prefer setuptools over distutils (or don't, I'm not a cop)
 from setuptools import setup, find_packages
 import pathlib
 
