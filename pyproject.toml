@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "more-testing"
+version = "0.1"
+description = "does dependabot support more than one manifest file?"
+authors = ["Security Engineering"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+cryptography = "41.0.5"
+
+[[tool.poetry.source]]
+name = "rl_artifactory"
+url = "https://ridgelineapps.jfrog.io/ridgelineapps/api/pypi/ridgeline-python-dev/simple/"
+priority = "default"
