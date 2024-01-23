@@ -17,3 +17,4 @@ seaborn==0.10.1
 six==1.15.0               # via cycler, python-dateutil
 mypy==1.5.1
 mrab-regex==2023.8.8
+horeseshoe_bnn
