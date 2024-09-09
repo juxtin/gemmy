@@ -1,4 +1,5 @@
-source 'https://rubygems.org'
+# frozen_string_literal: true
 
-gem "rails", "3.0.3", :source => "https://gems.example.com"
-gem "git", "1.1.0"
+source "https://rubygems.org"
+
+gem "crack", "1.0.0"
