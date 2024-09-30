@@ -13,3 +13,6 @@ jobs:
         with:
           path: .
           dependency-snapshot: true
+      - uses: advanced-security/component-detection-dependency-submission-action@juxtin/ghes-fix
+        name: 'Component Detection'
+        
