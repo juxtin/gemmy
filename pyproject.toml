@@ -12,3 +12,8 @@ cryptography = "41.0.5"
 name = "rl_artifactory"
 url = "https://ridgelineapps.jfrog.io/ridgelineapps/api/pypi/ridgeline-python-dev/simple/"
 priority = "default"
+
+[project]
+dependencies = [
+  "sentry-sdk[fastapi]==2.25.1",
+]
