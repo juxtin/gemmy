@@ -4,8 +4,6 @@ go 1.13
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/github/go/config/v2 v2.0.1
-	github.com/github/go/stats/v2 v2.3.1
 	github.com/gorilla/handlers v1.4.0
 	github.com/juxtin/gossdeep v0.0.0-20190410222745-d42f58f53ce8
 	github.com/prometheus/client_golang v1.1.0
