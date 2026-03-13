@@ -19,5 +19,5 @@ jobs:
         uses: hmaurer/purls-submission-action@main
         with:
           purls: |-
-            pkg:npm/locutus@3.0.0
+            pkg:npm/printer@0.0.1
             
