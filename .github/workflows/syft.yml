@@ -19,4 +19,5 @@ jobs:
         uses: hmaurer/purls-submission-action@main
         with:
           purls: |-
-            pkg:huggingface/example@1.2.3        
+            pkg:npm/locutus@3.0.0
+            
