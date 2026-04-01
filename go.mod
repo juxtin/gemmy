@@ -2,7 +2,7 @@ module github.com/github/vintage
 
 go 1.13
 
-require (
+require ( 
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/gorilla/handlers v1.4.0
 	github.com/juxtin/gossdeep v0.0.0-20190410222745-d42f58f53ce8
