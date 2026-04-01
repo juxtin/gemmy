@@ -6,7 +6,6 @@ on:
 jobs:
   syft-detection:
     runs-on: ubuntu-latest
-    if: ${{ false }}
     steps:
       - name: 'Checkout Repository'
         uses: actions/checkout@v3
