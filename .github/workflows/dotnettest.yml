@@ -1,0 +1,73 @@
+name: verify setup-dotnet offline reuse
+
+on:
+  workflow_dispatch:
+
+jobs:
+  should_reuse_local_sdk_when_check_latest_false:
+    runs-on: [self-hosted]
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show blocked hosts
+        shell: bash
+        run: |
+          echo "Hosts entries:"
+          grep -E 'builds.dotnet.microsoft.com|ci.dot.net|dotnetcli.azureedge.net' /etc/hosts || true
+          echo
+          echo "Installed SDKs before action:"
+          dotnet --list-sdks || true
+
+      - name: Reuse a locally installed SDK with blocked network
+        id: local_reuse
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          check-latest: false
+
+      - name: Validate the SDK was reused
+        shell: bash
+        run: |
+          echo "Resolved version: ${{ steps.local_reuse.outputs.dotnet-version }}"
+          dotnet --version
+          dotnet --list-sdks
+
+          # This should be present if the runner already had a matching local SDK
+          if ! dotnet --list-sdks | grep -E '^8\.'; then
+            echo "No 8.x SDK available locally"
+            exit 1
+          fi
+
+          echo "SUCCESS: local SDK was reused and the action did not need external resolution."
+
+  should_fail_when_forced_online:
+    runs-on: [self-hosted]
+    timeout-minutes: 20
+    needs: should_reuse_local_sdk_when_check_latest_false
+
+    steps:
+      - name: Show current environment
+        shell: bash
+        run: |
+          echo "This job intentionally forces the online path."
+          echo "Expect failures because the .NET hosts are blocked."
+
+      - name: Force online resolution
+        id: forced_online
+        continue-on-error: true
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          check-latest: true
+
+      - name: Check whether blocked hosts prevented network
+        shell: bash
+        run: |
+          if [ "${{ steps.forced_online.outcome }}" = "success" ]; then
+            echo "Unexpected success: online resolution still worked despite blocked hosts."
+            exit 1
+          fi
+          echo "Confirmed: the online path is blocked by the host entries."
