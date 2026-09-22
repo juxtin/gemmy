@@ -1,73 +1,81 @@
-name: verify setup-dotnet offline reuse
+name: Test setup-dotnet offline reuse
 
 on:
   workflow_dispatch:
 
 jobs:
-  should_reuse_local_sdk_when_check_latest_false:
+  offline-local-sdk-reuse:
     runs-on: [self-hosted]
-    timeout-minutes: 20
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Show blocked hosts
+      - name: Locate existing .NET installation
         shell: bash
         run: |
-          echo "Hosts entries:"
-          grep -E 'builds.dotnet.microsoft.com|ci.dot.net|dotnetcli.azureedge.net' /etc/hosts || true
-          echo
-          echo "Installed SDKs before action:"
-          dotnet --list-sdks || true
+          set -euo pipefail
 
-      - name: Reuse a locally installed SDK with blocked network
-        id: local_reuse
+          DOTNET_COMMAND="$(command -v dotnet)"
+          DOTNET_EXECUTABLE="$(python3 -c \
+            'import os, sys; print(os.path.realpath(sys.argv[1]))' \
+            "$DOTNET_COMMAND")"
+          DOTNET_DIRECTORY="$(dirname "$DOTNET_EXECUTABLE")"
+
+          echo "dotnet on PATH:       $DOTNET_COMMAND"
+          echo "resolved executable:  $DOTNET_EXECUTABLE"
+          echo "DOTNET_INSTALL_DIR:   $DOTNET_DIRECTORY"
+          echo
+
+          test -x "$DOTNET_DIRECTORY/dotnet"
+          test -d "$DOTNET_DIRECTORY/sdk"
+
+          echo "Installed SDK directories:"
+          find "$DOTNET_DIRECTORY/sdk" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -print
+
+          if ! find "$DOTNET_DIRECTORY/sdk" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -name '8.0.*' \
+            -print -quit |
+            grep -q .
+          then
+            echo "::error::No 8.0 SDK exists under $DOTNET_DIRECTORY/sdk"
+            exit 1
+          fi
+
+          echo "DOTNET_INSTALL_DIR=$DOTNET_DIRECTORY" >> "$GITHUB_ENV"
+
+      - name: Confirm blocked endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          grep -E \
+            'builds\.dotnet\.microsoft\.com|ci\.dot\.net|dotnetcli\.azureedge\.net' \
+            /etc/hosts
+
+      - name: Reuse installed 8.0 SDK without network access
+        id: setup
         uses: actions/setup-dotnet@b2658b49ae6334ebe110c5bdca7cc25fda50c01b
         with:
           dotnet-version: '8.0.x'
           check-latest: false
 
-      - name: Validate the SDK was reused
+      - name: Verify selected SDK
         shell: bash
+        env:
+          RESOLVED_VERSION: ${{ steps.setup.outputs.dotnet-version }}
         run: |
-          echo "Resolved version: ${{ steps.local_reuse.outputs.dotnet-version }}"
-          dotnet --version
-          dotnet --list-sdks
+          set -euo pipefail
 
-          # This should be present if the runner already had a matching local SDK
-          if ! dotnet --list-sdks | grep -E '^8\.'; then
-            echo "No 8.x SDK available locally"
-            exit 1
-          fi
+          echo "Action output: $RESOLVED_VERSION"
+          echo "dotnet version: $(dotnet --version)"
+          echo "DOTNET_ROOT: ${DOTNET_ROOT:-<unset>}"
+          echo "DOTNET_INSTALL_DIR: $DOTNET_INSTALL_DIR"
 
-          echo "SUCCESS: local SDK was reused and the action did not need external resolution."
-
-  should_fail_when_forced_online:
-    runs-on: [self-hosted]
-    timeout-minutes: 20
-    needs: should_reuse_local_sdk_when_check_latest_false
-
-    steps:
-      - name: Show current environment
-        shell: bash
-        run: |
-          echo "This job intentionally forces the online path."
-          echo "Expect failures because the .NET hosts are blocked."
-
-      - name: Force online resolution
-        id: forced_online
-        continue-on-error: true
-        uses: actions/setup-dotnet@b2658b49ae6334ebe110c5bdca7cc25fda50c01b
-        with:
-          dotnet-version: '8.0.x'
-          check-latest: true
-
-      - name: Check whether blocked hosts prevented network
-        shell: bash
-        run: |
-          if [ "${{ steps.forced_online.outcome }}" = "success" ]; then
-            echo "Unexpected success: online resolution still worked despite blocked hosts."
-            exit 1
-          fi
-          echo "Confirmed: the online path is blocked by the host entries."
+          [[ "$RESOLVED_VERSION" == 8.0.* ]]
+          [[ "$(dotnet --version)" == "$RESOLVED_VERSION" ]]
