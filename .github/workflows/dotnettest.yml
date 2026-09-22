@@ -14,49 +14,86 @@ jobs:
         run: |
           set -euo pipefail
 
-          DOTNET_COMMAND="$(command -v dotnet)"
-          DOTNET_EXECUTABLE="$(python3 -c \
-            'import os, sys; print(os.path.realpath(sys.argv[1]))' \
-            "$DOTNET_COMMAND")"
+          echo "Runner PATH: $PATH"
+
+          DOTNET_COMMAND="$(command -v dotnet || true)"
+
+          if [[ -z "$DOTNET_COMMAND" ]]; then
+            for candidate in \
+              /usr/local/share/dotnet/dotnet \
+              /usr/local/bin/dotnet \
+              /opt/homebrew/bin/dotnet \
+              "$HOME/.dotnet/dotnet"
+            do
+              if [[ -x "$candidate" ]]; then
+                DOTNET_COMMAND="$candidate"
+                break
+              fi
+            done
+          fi
+
+          if [[ -z "$DOTNET_COMMAND" ]]; then
+            echo "::error::Could not find dotnet on PATH or in the standard macOS locations"
+            exit 1
+          fi
+
+          DOTNET_EXECUTABLE="$(
+            python3 -c \
+              'import os, sys; print(os.path.realpath(sys.argv[1]))' \
+              "$DOTNET_COMMAND"
+          )"
           DOTNET_DIRECTORY="$(dirname "$DOTNET_EXECUTABLE")"
 
-          echo "dotnet on PATH:       $DOTNET_COMMAND"
-          echo "resolved executable:  $DOTNET_EXECUTABLE"
-          echo "DOTNET_INSTALL_DIR:   $DOTNET_DIRECTORY"
-          echo
+          echo "dotnet command:      $DOTNET_COMMAND"
+          echo "resolved executable: $DOTNET_EXECUTABLE"
+          echo "DOTNET_INSTALL_DIR:  $DOTNET_DIRECTORY"
 
-          test -x "$DOTNET_DIRECTORY/dotnet"
-          test -d "$DOTNET_DIRECTORY/sdk"
+          if [[ ! -x "$DOTNET_DIRECTORY/dotnet" ]]; then
+            echo "::error::$DOTNET_DIRECTORY/dotnet is not executable"
+            exit 1
+          fi
 
-          echo "Installed SDK directories:"
-          find "$DOTNET_DIRECTORY/sdk" \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -type d \
-            -print
+          if [[ ! -d "$DOTNET_DIRECTORY/sdk" ]]; then
+            echo "::error::$DOTNET_DIRECTORY/sdk does not exist"
+            exit 1
+          fi
 
-          if ! find "$DOTNET_DIRECTORY/sdk" \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -type d \
-            -name '8.0.*' \
-            -print -quit |
-            grep -q .
-          then
+          shopt -s nullglob
+          installed_sdks=("$DOTNET_DIRECTORY"/sdk/*)
+
+          echo "Installed SDKs:"
+          for sdk in "${installed_sdks[@]}"; do
+            [[ -d "$sdk" ]] && basename "$sdk"
+          done
+
+          matching_sdks=("$DOTNET_DIRECTORY"/sdk/8.0.*)
+          if [[ ${#matching_sdks[@]} -eq 0 ]]; then
             echo "::error::No 8.0 SDK exists under $DOTNET_DIRECTORY/sdk"
             exit 1
           fi
 
           echo "DOTNET_INSTALL_DIR=$DOTNET_DIRECTORY" >> "$GITHUB_ENV"
+          echo "$DOTNET_DIRECTORY" >> "$GITHUB_PATH"
 
       - name: Confirm blocked endpoints
         shell: bash
         run: |
           set -euo pipefail
 
+          echo "Blocked .NET endpoints:"
           grep -E \
             'builds\.dotnet\.microsoft\.com|ci\.dot\.net|dotnetcli\.azureedge\.net' \
             /etc/hosts
+
+      - name: Show SDKs visible before setup-dotnet
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "DOTNET_INSTALL_DIR: $DOTNET_INSTALL_DIR"
+          echo "dotnet executable: $(command -v dotnet)"
+          dotnet --info
+          dotnet --list-sdks
 
       - name: Reuse installed 8.0 SDK without network access
         id: setup
@@ -72,10 +109,21 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "Action output: $RESOLVED_VERSION"
-          echo "dotnet version: $(dotnet --version)"
-          echo "DOTNET_ROOT: ${DOTNET_ROOT:-<unset>}"
-          echo "DOTNET_INSTALL_DIR: $DOTNET_INSTALL_DIR"
+          ACTUAL_VERSION="$(dotnet --version)"
 
-          [[ "$RESOLVED_VERSION" == 8.0.* ]]
-          [[ "$(dotnet --version)" == "$RESOLVED_VERSION" ]]
+          echo "Action output:       $RESOLVED_VERSION"
+          echo "dotnet version:      $ACTUAL_VERSION"
+          echo "DOTNET_ROOT:         ${DOTNET_ROOT:-<unset>}"
+          echo "DOTNET_INSTALL_DIR:  $DOTNET_INSTALL_DIR"
+
+          if [[ "$RESOLVED_VERSION" != 8.0.* ]]; then
+            echo "::error::Expected setup-dotnet to resolve an 8.0 SDK, got '$RESOLVED_VERSION'"
+            exit 1
+          fi
+
+          if [[ "$ACTUAL_VERSION" != "$RESOLVED_VERSION" ]]; then
+            echo "::error::dotnet selected '$ACTUAL_VERSION', but setup-dotnet reported '$RESOLVED_VERSION'"
+            exit 1
+          fi
+
+          echo "SUCCESS: setup-dotnet reused the locally installed SDK while its download endpoints were blocked."
