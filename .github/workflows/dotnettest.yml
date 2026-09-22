@@ -23,7 +23,7 @@ jobs:
 
       - name: Reuse a locally installed SDK with blocked network
         id: local_reuse
-        uses: actions/setup-dotnet@v-mahabaleshwars:feature/762-check-latest-input
+        uses: actions/setup-dotnet@b2658b49ae6334ebe110c5bdca7cc25fda50c01b
         with:
           dotnet-version: '8.0.x'
           check-latest: false
@@ -58,7 +58,7 @@ jobs:
       - name: Force online resolution
         id: forced_online
         continue-on-error: true
-        uses: actions/setup-dotnet@v-mahabaleshwars:feature/762-check-latest-input
+        uses: actions/setup-dotnet@b2658b49ae6334ebe110c5bdca7cc25fda50c01b
         with:
           dotnet-version: '8.0.x'
           check-latest: true
